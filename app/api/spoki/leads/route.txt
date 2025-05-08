@@ -1,0 +1,190 @@
+import { NextResponse } from "next/server";
+import cheerio from "cheerio";
+
+function extractURL(message: string) {
+	// Regular expression to match URLs
+	const urlRegex = /https?:\/\/[^\s]+/g;
+	// Find the first URL in the message
+	const found = message.match(urlRegex);
+	return found ? found[0] : "";
+}
+
+const spokiAgencies = {
+	"0114119005": "info.moncalieri@tua-car.it",
+	"0322011352": "info.arona@tua-car.it",
+	"3517939876": "info.pinerolo@tua-car.it",
+	"0112423924": "info.rivoli@tua-car.it",
+	"3715280938": "info.novara@tua-car.it",
+	"0110201726": "info.torino1@tua-car.it",
+	"3773381001": "info.piacenza1@tua-car.it",
+	"3272572513": "info.frosinone@tua-car.it",
+	"3894835611": "info.taranto@tua-car.it",
+	"3342714397": "info.torino2@tua-car.it",
+	"3758415751": "info.parma@tua-car.it",
+	"3517471930": "info.bustoarsizio@tua-car.it",
+	"3513847572": "info.saluzzo@tua-car.it",
+	"-": "info.brescia@tua-car.it",
+	"--": "info.ivrea@tua-car.it",
+	"0963580522": "info.vibovalentia@tua-car.it",
+	"3332627802": "direzione@tua-car.it",
+};
+
+// autoscout
+function generaId() {
+	const timestamp = Date.now();
+	const rand = Math.random().toString(36).substring(2, 15);
+	return `${timestamp}-${rand}`;
+}
+
+export async function POST(request: Request) {
+	const data = await request.json();
+
+	console.log("init data: ", data);
+
+	if (data) {
+		try {
+			const agencyPhone: keyof typeof spokiAgencies = data.data.to_phone.replace("39", "").replace("+", "");
+			const agencyEmail = spokiAgencies[agencyPhone];
+
+			const agency = await db.query.agencies.findFirst({
+				where: eq(agencies.email, agencyEmail),
+			});
+
+			console.log("FOUND AGENCY: ", agency);
+			console.log("SPOKI FOUND AGENCY: ", agency?.email);
+
+			let contactName = "Cliente";
+			const contactPhone = data.data.from_phone;
+			let messaggio = data.data.text;
+
+			if (data.data.contact) {
+				contactName = data.data.contact.first_name;
+			}
+
+			if (agency) {
+				if (messaggio.includes("autoscout")) {
+					console.log("Lead autoscout");
+
+					const url = extractURL(messaggio);
+
+					const response = await fetch(url);
+					const html = await response.text();
+
+					const $ = cheerio.load(html);
+
+					const carName = $("h1.StageTitle_title__ROiR4").text().trim();
+
+					const imgSrc = $("picture.ImageWithBadge_picture__XJG24 img").attr("src");
+
+					messaggio = messaggio + "<br><img src='" + imgSrc + "' height='512' width='650' />";
+
+					const Subject = "Spoki - " + carName;
+
+					const sendTo = ["AGENZIA_001", "AGENZIA_002", "AGENZIA_003"];
+
+					const groupId = generaId();
+
+					if (sendTo.includes(agency.code ? agency.code : "")) {
+						sendTo.map(async (to) => {
+							const newEmailAd: z.infer<typeof insertEmailAdSchema> = {
+								emailId: data.data.uuid,
+								agencyCode: to,
+								url: url,
+								subject: Subject,
+								groupId: groupId,
+								htmlBody: messaggio,
+								carName: carName,
+								isAssigned: false,
+								buyerName: contactName,
+								buyerEmail: "",
+								buyerPhone: contactPhone,
+							};
+
+							const newLead = await addEmailAdAction(newEmailAd);
+
+							if (newLead) {
+								console.log("new Spoki Lead: ", newLead);
+							}
+						});
+					} else {
+						const useAgencyCode = agency.code;
+						const newEmailAd: z.infer<typeof insertEmailAdSchema> = {
+							emailId: data.data.uuid,
+							agencyCode: useAgencyCode ? useAgencyCode : "",
+							url: url,
+							subject: Subject,
+							body: messaggio,
+							htmlBody: messaggio,
+							carName: carName,
+							isAssigned: false,
+							buyerName: contactName,
+							buyerEmail: "",
+							buyerPhone: contactPhone,
+						};
+
+						const newLead = await addEmailAdAction(newEmailAd);
+
+						if (newLead) {
+							console.log("new Spoki Lead: ", newLead);
+						}
+					}
+				}
+				if (messaggio.toLowerCase().includes("maggiori informazioni")) {
+					const sendTo = ["AGENZIA_001", "AGENZIA_002", "AGENZIA_003"];
+
+					const groupId = generaId();
+
+					if (sendTo.includes(agency.code ? agency.code : "")) {
+						sendTo.map(async (to) => {
+							const newEmailAd: z.infer<typeof insertEmailAdSchema> = {
+								emailId: data.data.uuid,
+								agencyCode: to,
+								url: "tua-car",
+								subject: "Richiesta info Tua-Car",
+								groupId: groupId,
+								htmlBody: messaggio,
+								carName: "",
+								isAssigned: false,
+								buyerName: contactName,
+								buyerEmail: "",
+								buyerPhone: contactPhone,
+							};
+
+							const newLead = await addEmailAdAction(newEmailAd);
+
+							if (newLead) {
+								console.log("new Spoki Lead: ", newLead);
+							}
+						});
+					} else {
+						const useAgencyCode = agency.code;
+						const newEmailAd: z.infer<typeof insertEmailAdSchema> = {
+							emailId: data.data.uuid,
+							agencyCode: useAgencyCode ? useAgencyCode : "",
+							url: "tua-car",
+							subject: "Richiesta info Tua-Car",
+							body: messaggio,
+							htmlBody: messaggio,
+							carName: "",
+							isAssigned: false,
+							buyerName: contactName,
+							buyerEmail: "",
+							buyerPhone: contactPhone,
+						};
+
+						const newLead = await addEmailAdAction(newEmailAd);
+
+						if (newLead) {
+							console.log("new Spoki Lead: ", newLead);
+						}
+					}
+				}
+			}
+		} catch (error) {
+			console.log(error);
+			return NextResponse.json({ status: 500 });
+		}
+	}
+
+	return NextResponse.json({ status: 200 });
+}

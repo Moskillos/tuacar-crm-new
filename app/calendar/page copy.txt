@@ -1,0 +1,69 @@
+import { db } from "@/db";
+import { Activity, CarToBuy, CarToRent, Contact, activities } from "@/db/schema";
+import { getSession } from "@auth0/nextjs-auth0";
+import { and, eq, inArray } from "drizzle-orm";
+import Calendar from "./components/Calendar";
+import useUser from "@/stores/useUser";
+
+export type ActivityWithContact = Activity & {
+	contact:
+	| (Contact & {
+		carToBuy: CarToBuy | null;
+	})
+	| null;
+	split?: boolean;
+	carToRent: CarToRent | null;
+	carToBuy: CarToBuy | null; // Added this line
+};
+
+export default async function CalendarPage() {
+	const session = await getSession();
+	if (!session) return null;
+
+	const userRoles: string[] = session.user["https://manager.tuacar.it/roles"];
+	const agencyNames = userRoles.filter((role) => role.includes("crm-seller")).map((role) => role.split("|")[0]);
+
+	if (userRoles.includes("tenant_001|admin")) {
+		const allActivitiesContacts: any = await db.query.activities.findMany({
+			//where: inArray(activities.agencyCode, agencyNames),
+			with: {
+				contact: {
+					with: {
+						carToBuy: true,
+					},
+				},
+				carToBuy: true,
+				carToRent: true,
+			},
+		});
+		return <Calendar activities={allActivitiesContacts} userId={session.user.sub} />;
+	}
+	const userActivitiesContacts: any = !userRoles.toString().includes("erp-supervisor") && !userRoles.toString().includes("erp-backoffice")
+		? await db.query.activities.findMany({
+			where: and(eq(activities.userId, session.user.sub), inArray(activities.agencyCode, agencyNames)),
+			with: {
+				contact: {
+					with: {
+						carToBuy: true,
+					},
+				},
+				carToBuy: true,
+				carToRent: true,
+			},
+		})
+		: await db.query.activities.findMany({
+			where: inArray(activities.agencyCode, agencyNames),
+			with: {
+				contact: {
+					with: {
+						carToBuy: true,
+					},
+				},
+				carToBuy: true,
+				carToRent: true,
+			},
+		});
+		
+
+	return <Calendar activities={userActivitiesContacts} userId={session.user.sub} />;
+}

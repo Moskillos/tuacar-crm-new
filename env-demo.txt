@@ -1,0 +1,19 @@
+AUTH0_SECRET='549520fbb9a6ad13c7d0c5679bb8a2f62fc61b545172d9b14cbbfe4f10d0f7da'
+AUTH0_BASE_URL='http://localhost:3000'
+AUTH0_ISSUER_BASE_URL='https://auth.tuacar.it/'
+AUTH0_CLIENT_ID='wdqASEvbV4souGMYieRiV2iWKZqiot7n'
+AUTH0_CLIENT_SECRET='QEG-RJWDBghrD-78Y7nv2V-VIgAlKiun4nrrzDRoXcAjNu0TCEQBYq6HogiwN45_'
+AUTH0_AUDIENCE='https://manager.tuacar.it'
+AUTH0_SCOPE='openid profile email offline_access'
+GRAPHQL_URL='https://manager-api.tuacar.it/graphql'
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+RDS_HOST=tuacar-test.c9o82iuuocpf.eu-south-1.rds.amazonaws.com
+RDS_USER=admin
+RDS_PSW=oj9KIzAqHCfktF5xEeHY
+RDS_DB=tuacar
+WS_CONSUMER_KEY=ck_82759834e97a5fe518d54d7d4da8c795d4541e48
+WS_CONSUMER_SECRET=cs_939df032cf298029521447b4d3539f84d44da956
+WS_BASE_URL=https://tua-car.it/
+WS_BOOKING_USERNAME=Gabriele
+WS_BOOKING_PSW="sQG4 10LP HYbc Jp9w PzIZ fcCj"
+RENT_4_YOU_API_KEY="bT7(lhAl<Mds@,x_.xIqE8'y$i=U#LL+COErf6bU;2TA,Yu(T6:P6-MJN;%#Kiin"

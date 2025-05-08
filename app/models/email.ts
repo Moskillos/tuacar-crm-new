@@ -1,0 +1,17 @@
+interface Email{
+ agencyCode: string, //string,
+ url: string, //string,
+ subject: string, //string,
+    body: string, //string,
+    isAssigned: boolean, //boolean,
+    createdAt: Date, //Date,
+    buyerName: string, //string,
+    buyerPhone: string, //string,
+    buyerEmail: string, //string,
+    carName: string, //string,
+    htmlBody: string, //string,
+    groupId: string, //string,
+    mongodbId: string, //string,
+    emailId: string, //string,
+    isVisible: boolean, //boolean,   
+}
